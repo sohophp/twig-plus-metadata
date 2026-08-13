@@ -115,7 +115,8 @@ final class ControllerContextAnalyzer
             if ($node->var instanceof Expr\Variable && is_string($node->var->name)) {
                 $name = $node->var->name;
                 $types[$name] = $this->inferType($node->expr, $types);
-                if ($node->expr instanceof Expr\Array_) $arrays[$name] = $this->arrayVariables($node->expr, $types);
+                $context = $this->contextVariables($node->expr, $types, $arrays);
+                if (null !== $context) $arrays[$name] = $context;
             } elseif ($node->var instanceof Expr\ArrayDimFetch && $node->var->var instanceof Expr\Variable && is_string($node->var->var->name)) {
                 $arrayName = $node->var->var->name;
                 $key = $this->stringValue($node->var->dim);
@@ -131,13 +132,19 @@ final class ControllerContextAnalyzer
         $template = $this->stringValue($args[$templateIndex]->value);
         $contextArg = isset($args[$templateIndex + 1]) ? $args[$templateIndex + 1]->value : null;
         $variables = $this->contextVariables($contextArg, $types, $arrays);
-        $result[] = array('template' => $template, 'complete' => null !== $contextArg, 'variables' => $variables, 'sources' => array(array('controller' => $source, 'path' => $relative, 'line' => $node->getStartLine())));
+        $complete = null !== $variables;
+        $variables = $variables ?: array();
+        // A common framework-neutral renderer convention is
+        // render($request, $template, $variables, $dataset).
+        if (1 === $templateIndex && isset($args[3])) $variables['dataset'] = $this->inferType($args[3]->value, $types);
+        $result[] = array('template' => $template, 'complete' => $complete, 'variables' => $variables, 'sources' => array(array('controller' => $source, 'path' => $relative, 'line' => $node->getStartLine())));
     }
 
     private function contextVariables($expression, array $types, array $arrays)
     {
+        if (null === $expression) return array();
         if ($expression instanceof Expr\Array_) return $this->arrayVariables($expression, $types);
-        if ($expression instanceof Expr\Variable && is_string($expression->name)) return isset($arrays[$expression->name]) ? $arrays[$expression->name] : array();
+        if ($expression instanceof Expr\Variable && is_string($expression->name)) return isset($arrays[$expression->name]) ? $arrays[$expression->name] : null;
         if ($expression instanceof Expr\FuncCall && $expression->name instanceof Name && 'compact' === strtolower($expression->name->toString())) {
             $result = array();
             foreach ($expression->args as $arg) {
@@ -146,7 +153,16 @@ final class ControllerContextAnalyzer
             }
             return $result;
         }
-        return array();
+        if ($expression instanceof Expr\FuncCall && $expression->name instanceof Name && 'array_merge' === strtolower($expression->name->toString())) {
+            $result = array();
+            foreach ($expression->args as $arg) {
+                $part = $this->contextVariables($arg->value, $types, $arrays);
+                if (null === $part) return null;
+                $result = array_merge($result, $part);
+            }
+            return $result;
+        }
+        return null;
     }
 
     private function arrayVariables(Expr\Array_ $array, array $types)
