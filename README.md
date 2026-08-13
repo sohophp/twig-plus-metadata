@@ -35,6 +35,10 @@ The command writes `.twig-plus/symfony-metadata.json`. Add `/.twig-plus/` to the
 
 Regenerate after changing Twig extensions, global object APIs, callable return types, or relevant dependencies.
 
+Controller variables are indexed statically from Symfony-style `render($template, $variables)` calls and renderer services using `render($request, $template, $variables)`. Literal arrays, `compact()`, variable context arrays, typed parameters, promoted properties and reflected method return types are supported. Dynamic values that cannot be proven are left as `mixed` rather than guessed.
+
+Controller parsing happens only when this command runs. A per-file content-hash cache under `.twig-plus/cache` avoids reparsing unchanged PHP files; PHP ASTs are never retained by the editor.
+
 ## Exported facts
 
 - Registered globals and their runtime PHP classes
@@ -43,5 +47,6 @@ Regenerate after changing Twig extensions, global object APIs, callable return t
 - Public methods and properties on related object types
 - Twig getter mapping such as `getNavigation()` to `navigation`
 - Bounded recursive member types for project namespaces
+- Per-template controller variables, types and source action locations
 
 Dynamic callables remain available by name when reflection cannot prove a signature or type. The generator does not invent member data.

@@ -8,6 +8,7 @@ use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 use TwigPlus\Metadata\MetadataGenerator;
+use TwigPlus\Metadata\ControllerContextAnalyzer;
 
 final class MetadataGeneratorTest extends TestCase
 {
@@ -26,6 +27,30 @@ final class MetadataGeneratorTest extends TestCase
         $members = array_column($metadata['types'][FixtureCatalog::class]['members'], 'name');
         $this->assertContains('navigation', $members);
         $this->assertContains('refresh', $members);
+    }
+
+    public function testIndexesTypedControllerVariablesIncrementally()
+    {
+        $root = sys_get_temp_dir().'/twig-plus-metadata-'.uniqid('', true);
+        mkdir($root.'/src', 0777, true);
+        file_put_contents($root.'/src/PageController.php', <<<'PHP'
+<?php
+final class PageController {
+    public function show(FixtureCatalog $catalog) {
+        $vars = array('catalog' => $catalog);
+        $vars['enabled'] = true;
+        return $this->render('site/page.html.twig', $vars);
+    }
+}
+PHP
+        );
+        $cache = $root.'/.twig-plus/cache/controller-contexts.json';
+        $contexts = (new ControllerContextAnalyzer())->analyze($root, $cache);
+        $this->assertSame('site/page.html.twig', $contexts[0]['template']);
+        $this->assertSame('FixtureCatalog', $contexts[0]['variables']['catalog']);
+        $this->assertSame('bool', $contexts[0]['variables']['enabled']);
+        $this->assertFileExists($cache);
+        $this->assertSame($contexts, (new ControllerContextAnalyzer())->analyze($root, $cache));
     }
 
     private function find(array $entries, $name)

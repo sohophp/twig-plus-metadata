@@ -15,11 +15,13 @@ final class MetadataGenerator
 {
     private $maxTypes;
     private $recursiveNamespaces;
+    private $contextAnalyzer;
 
-    public function __construct($maxTypes = 250, array $recursiveNamespaces = array())
+    public function __construct($maxTypes = 250, array $recursiveNamespaces = array(), ControllerContextAnalyzer $contextAnalyzer = null)
     {
         $this->maxTypes = (int) $maxTypes;
         $this->recursiveNamespaces = $recursiveNamespaces;
+        $this->contextAnalyzer = $contextAnalyzer ?: new ControllerContextAnalyzer();
     }
 
     public function generate(Environment $twig, $projectRoot)
@@ -39,8 +41,15 @@ final class MetadataGenerator
         $tests = $this->collectCallables($twig->getTests(), 'test', $types, $projectRoot);
         $version = defined('Twig\\Environment::VERSION') ? constant('Twig\\Environment::VERSION') : null;
 
+        $contexts = $this->contextAnalyzer->analyze($projectRoot, rtrim($projectRoot, '/\\').'/.twig-plus/cache/controller-contexts.json');
+        foreach ($contexts as &$context) {
+            $context['template'] = $this->resolveTemplate($twig, $context['template'], $projectRoot);
+            foreach ($context['variables'] as $type) if ($type && (class_exists($type) || interface_exists($type))) $this->collectType($type, $types, $this->namespaceRoots($type, $projectRoot));
+        }
+        unset($context);
+
         return array(
-            'schemaVersion' => 3,
+            'schemaVersion' => 4,
             'providerId' => 'twig-plus-metadata',
             'projectRoot' => realpath($projectRoot) ?: $projectRoot,
             'generatedAt' => (int) floor(microtime(true) * 1000),
@@ -48,8 +57,18 @@ final class MetadataGenerator
             'completions' => array_merge($functions, $filters, $tests),
             'symbols' => array('globals' => $globals, 'functions' => $functions, 'filters' => $filters, 'tests' => $tests, 'tags' => array()),
             'types' => $types,
-            'contexts' => array(), 'references' => array(), 'templates' => array(), 'blocks' => array(), 'macros' => array(),
+            'contexts' => $contexts, 'references' => array(), 'templates' => array(), 'blocks' => array(), 'macros' => array(),
         );
+    }
+
+    private function resolveTemplate(Environment $twig, $template, $projectRoot)
+    {
+        try {
+            $path = $twig->getLoader()->getSourceContext($template)->getPath();
+            $root = rtrim(realpath($projectRoot) ?: $projectRoot, '/\\').DIRECTORY_SEPARATOR;
+            if ($path && 0 === strpos($path, $root)) return str_replace('\\', '/', substr($path, strlen($root)));
+        } catch (\Throwable $error) {}
+        return $template;
     }
 
     private function collectCallables($callables, $kind, array &$types, $projectRoot)
