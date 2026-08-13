@@ -28,7 +28,7 @@ return [
 Generate metadata:
 
 ```bash
-bin/console twig-plus:metadata
+php bin/console twig-plus:metadata
 ```
 
 The command writes `.twig-plus/symfony-metadata.json`. Add `/.twig-plus/` to the project `.gitignore` because the file records the absolute project root.
