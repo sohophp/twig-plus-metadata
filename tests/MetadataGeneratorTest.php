@@ -19,7 +19,7 @@ final class MetadataGeneratorTest extends TestCase
         $twig->addFunction(new TwigFunction('make_catalog', function (): FixtureCatalog { return new FixtureCatalog(); }));
         $twig->addFilter(new TwigFilter('fixture_name', function ($value): string { return (string) $value; }));
 
-        $metadata = (new MetadataGenerator())->generate($twig, dirname(__DIR__));
+        $metadata = (new MetadataGenerator())->generate($twig, sys_get_temp_dir());
         $global = $this->find($metadata['symbols']['globals'], 'catalog');
         $this->assertSame(FixtureCatalog::class, $global['type']);
         $this->assertSame(FixtureCatalog::class, $this->find($metadata['symbols']['functions'], 'make_catalog')['returnType']);
