@@ -1,0 +1,41 @@
+{
+  "name": "sohophp/twig-plus-metadata",
+  "description": "Generate typed Twig project metadata for the TwigPlus language server.",
+  "type": "symfony-bundle",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.2 <8.6",
+    "symfony/console": "^4.4 || ^5.0 || ^6.0 || ^7.0 || ^8.0",
+    "symfony/dependency-injection": "^4.4 || ^5.0 || ^6.0 || ^7.0 || ^8.0",
+    "symfony/filesystem": "^4.4 || ^5.0 || ^6.0 || ^7.0 || ^8.0",
+    "symfony/framework-bundle": "^4.4 || ^5.0 || ^6.0 || ^7.0 || ^8.0",
+    "twig/twig": "^2.12 || ^3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.5 || ^9.0 || ^10.0 || ^11.0 || ^12.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "TwigPlus\\Metadata\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "TwigPlus\\Metadata\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.x-dev"
+    }
+  },
+  "scripts": {
+    "test": "@php vendor/bin/phpunit",
+    "check": [
+      "@php -l src/MetadataGenerator.php",
+      "@php -l src/Command/GenerateMetadataCommand.php",
+      "@php -l src/TwigPlusMetadataBundle.php",
+      "@test"
+    ]
+  }
+}
