@@ -28,12 +28,12 @@ final class GenerateMetadataCommand extends Command
         parent::__construct();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('twig-plus:metadata')->setDescription(self::$defaultDescription);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $metadata = $this->generator->generate($this->twig, $this->projectDir);
         $directory = $this->projectDir.'/.twig-plus';
