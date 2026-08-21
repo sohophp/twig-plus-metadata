@@ -17,5 +17,8 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-      - run: composer update --prefer-dist --no-interaction
+      # Old PHP jobs intentionally resolve historical Twig/Symfony versions to
+      # verify this library's compatibility surface. Consumer installs keep
+      # Composer's default security blocking behavior.
+      - run: composer update --prefer-dist --no-interaction --no-security-blocking
       - run: composer check
