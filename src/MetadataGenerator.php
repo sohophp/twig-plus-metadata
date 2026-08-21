@@ -17,7 +17,7 @@ final class MetadataGenerator
     private $recursiveNamespaces;
     private $contextAnalyzer;
 
-    public function __construct($maxTypes = 250, array $recursiveNamespaces = array(), ControllerContextAnalyzer $contextAnalyzer = null)
+    public function __construct($maxTypes = 250, array $recursiveNamespaces = array(), ?ControllerContextAnalyzer $contextAnalyzer = null)
     {
         $this->maxTypes = (int) $maxTypes;
         $this->recursiveNamespaces = $recursiveNamespaces;

@@ -10,7 +10,7 @@ use TwigPlus\Metadata\Command\GenerateMetadataCommand;
 
 final class TwigPlusMetadataBundle extends Bundle
 {
-    public function build(ContainerBuilder $container)
+    public function build(ContainerBuilder $container): void
     {
         parent::build($container);
 
